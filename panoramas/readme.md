@@ -1,0 +1,1 @@
+Panorama images folder
