@@ -1,50 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Basic Panorama Test</title>
+    <title>Debug Panorama</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <style>
         body { margin: 0; }
-        .status {
+        #debug-panel {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             color: white;
             padding: 10px;
             border-radius: 5px;
             z-index: 1000;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <div class="status">Loading... If you see this message for more than a few seconds, check the console for errors.</div>
+    <div id="debug-panel">Loading panorama...</div>
 
     <a-scene>
-        <a-assets>
+        <a-assets timeout="30000">
+            <!-- Using a different test panorama -->
             <img id="test-pano" 
-                 src="https://images.squarespace-cdn.com/content/v1/5ab9f1c34611a0baaac44dd8/1522564907331-8KT5UGGYS3VVAZM317EN/Aspen+Grove+1+-+Equirectangular+Panorama.jpg" 
+                 src="https://cdn.glitch.global/30914247-5ff6-4b45-b79f-79b3df568b09/equirectangular-test.jpg?v=1661454468032" 
                  crossorigin="anonymous">
         </a-assets>
 
-        <a-sky src="#test-pano"></a-sky>
-        
-        <!-- Visual reference point -->
+        <a-sky id="skybox" src="#test-pano" color="#ECECEC"></a-sky>
         <a-sphere position="0 1.6 -5" radius="0.5" color="red"></a-sphere>
     </a-scene>
 
     <script>
-        // Hide the status message when the scene loads
+        // Debug element
+        const debugPanel = document.querySelector('#debug-panel');
+
+        // Scene load handling
         document.querySelector('a-scene').addEventListener('loaded', function () {
-            document.querySelector('.status').style.display = 'none';
+            debugPanel.textContent += '\nScene loaded';
         });
 
-        // Show any loading errors
-        document.querySelector('#test-pano').addEventListener('error', function() {
-            document.querySelector('.status').textContent = 'Error loading panorama';
+        // Asset loading handling
+        const pano = document.querySelector('#test-pano');
+        
+        pano.addEventListener('load', function() {
+            debugPanel.textContent += '\nPanorama loaded successfully';
         });
+
+        pano.addEventListener('error', function(e) {
+            debugPanel.textContent += '\nError loading panorama: ' + e.message;
+            // Try loading a solid color as fallback
+            document.querySelector('#skybox').setAttribute('color', '#2196f3');
+        });
+
+        // Additional debug info
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            debugPanel.textContent += '\nError: ' + msg;
+            return false;
+        };
     </script>
 </body>
 </html>
