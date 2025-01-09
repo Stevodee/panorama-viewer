@@ -1,10 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Basic Test</title>
+    <title>Basic Panorama Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <style>
+        body { margin: 0; }
+        .status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
-    <h1>Test Page</h1>
-    <p>If you can see this, the page is working!</p>
+    <div class="status">Loading... If you see this message for more than a few seconds, check the console for errors.</div>
+
+    <a-scene>
+        <a-assets>
+            <img id="test-pano" 
+                 src="https://images.squarespace-cdn.com/content/v1/5ab9f1c34611a0baaac44dd8/1522564907331-8KT5UGGYS3VVAZM317EN/Aspen+Grove+1+-+Equirectangular+Panorama.jpg" 
+                 crossorigin="anonymous">
+        </a-assets>
+
+        <a-sky src="#test-pano"></a-sky>
+        
+        <!-- Visual reference point -->
+        <a-sphere position="0 1.6 -5" radius="0.5" color="red"></a-sphere>
+    </a-scene>
+
+    <script>
+        // Hide the status message when the scene loads
+        document.querySelector('a-scene').addEventListener('loaded', function () {
+            document.querySelector('.status').style.display = 'none';
+        });
+
+        // Show any loading errors
+        document.querySelector('#test-pano').addEventListener('error', function() {
+            document.querySelector('.status').textContent = 'Error loading panorama';
+        });
+    </script>
 </body>
 </html>
