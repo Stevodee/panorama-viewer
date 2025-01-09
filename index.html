@@ -1,67 +1,257 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug Panorama</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Advanced A-Frame Panorama Experience</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <!-- Minimap component -->
+    <script>
+        AFRAME.registerComponent('minimap', {
+            init: function() {
+                this.canvas = document.createElement('canvas');
+                this.canvas.width = 200;
+                this.canvas.height = 200;
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Create minimap texture
+                const mapTexture = new THREE.CanvasTexture(this.canvas);
+                this.el.setAttribute('material', {src: mapTexture});
+                
+                this.updateMap = this.updateMap.bind(this);
+                this.el.sceneEl.addEventListener('renderstart', this.updateMap);
+            },
+            
+            updateMap: function() {
+                const cameraRotation = document.querySelector('a-camera').object3D.rotation;
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, 200, 200);
+                
+                // Draw direction indicator
+                this.ctx.save();
+                this.ctx.translate(100, 100);
+                this.ctx.rotate(-cameraRotation.y);
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, -20);
+                this.ctx.lineTo(10, 10);
+                this.ctx.lineTo(-10, 10);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fill();
+                this.ctx.restore();
+                
+                this.el.getObject3D('mesh').material.map.needsUpdate = true;
+            },
+            
+            tick: function() {
+                this.updateMap();
+            }
+        });
+
+        // Hotspot component for interactive points
+        AFRAME.registerComponent('hotspot', {
+            schema: {
+                for: {type: 'string'},
+                image: {type: 'string'},
+                text: {type: 'string'},
+                sound: {type: 'string'},
+                link: {type: 'string'}
+            },
+
+            init: function() {
+                this.el.addEventListener('click', () => {
+                    if (this.data.image) {
+                        document.querySelector('#hotspot-image').setAttribute('src', this.data.image);
+                        document.querySelector('#image-modal').setAttribute('visible', true);
+                    }
+                    if (this.data.sound) {
+                        document.querySelector(`#${this.data.sound}`).components.sound.playSound();
+                    }
+                    if (this.data.link) {
+                        window.open(this.data.link, '_blank');
+                    }
+                });
+
+                // Add hover text
+                if (this.data.text) {
+                    const textEl = document.createElement('a-text');
+                    textEl.setAttribute('value', this.data.text);
+                    textEl.setAttribute('align', 'center');
+                    textEl.setAttribute('position', '0 0.5 0');
+                    textEl.setAttribute('scale', '0.5 0.5 0.5');
+                    textEl.setAttribute('visible', false);
+                    this.el.appendChild(textEl);
+
+                    this.el.addEventListener('mouseenter', () => {
+                        textEl.setAttribute('visible', true);
+                    });
+                    this.el.addEventListener('mouseleave', () => {
+                        textEl.setAttribute('visible', false);
+                    });
+                }
+            }
+        });
+    </script>
     <style>
-        body { margin: 0; }
-        #debug-panel {
+        .controls {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
+            z-index: 1000;
+            background: rgba(0,0,0,0.5);
             padding: 10px;
             border-radius: 5px;
-            z-index: 1000;
-            font-family: monospace;
+            color: white;
+        }
+        .controls button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="debug-panel">Loading panorama...</div>
-
+    <div class="controls">
+        <button onclick="switchPanorama('prev')">Previous</button>
+        <button onclick="toggleVR()">Enter VR</button>
+        <button onclick="switchPanorama('next')">Next</button>
+    </div>
+    
     <a-scene>
-        <a-assets timeout="30000">
-            <!-- Using a different test panorama -->
-            <img id="test-pano" 
-                 src="https://cdn.glitch.global/30914247-5ff6-4b45-b79f-79b3df568b09/equirectangular-test.jpg?v=1661454468032" 
-                 crossorigin="anonymous">
+        <a-assets>
+            <!-- Panoramas -->
+            <img id="pano-1" src="YOUR_PANORAMA_URL_1" crossorigin="anonymous">
+            <img id="pano-2" src="YOUR_PANORAMA_URL_2" crossorigin="anonymous">
+            
+            <!-- Video -->
+            <video id="video-texture" src="YOUR_VIDEO_URL" loop="true" crossorigin="anonymous"></video>
+            
+            <!-- Audio -->
+            <audio id="location-sound-1" src="YOUR_AUDIO_URL_1" preload="auto"></audio>
+            <audio id="location-sound-2" src="YOUR_AUDIO_URL_2" preload="auto"></audio>
+            
+            <!-- Images for hotspots -->
+            <img id="hotspot-image-1" src="YOUR_HOTSPOT_IMAGE_1" crossorigin="anonymous">
+            <img id="hotspot-image-2" src="YOUR_HOTSPOT_IMAGE_2" crossorigin="anonymous">
         </a-assets>
 
-        <a-sky id="skybox" src="#test-pano" color="#ECECEC"></a-sky>
-        <a-sphere position="0 1.6 -5" radius="0.5" color="red"></a-sphere>
+        <!-- Camera -->
+        <a-entity position="0 1.6 0">
+            <a-camera look-controls="reverseMouseDrag: true">
+                <a-cursor color="#FFFFFF"></a-cursor>
+                
+                <!-- HUD Elements (attached to camera) -->
+                <a-plane
+                    position="0.4 0.4 -1"
+                    width="0.2"
+                    height="0.2"
+                    material="transparent: true; opacity: 0.8"
+                    minimap>
+                </a-plane>
+                
+                <!-- Location Info -->
+                <a-text
+                    value="Current Location"
+                    position="-0.4 0.4 -1"
+                    scale="0.2 0.2 0.2"
+                    align="left"
+                    color="white">
+                </a-text>
+            </a-camera>
+        </a-entity>
+
+        <!-- Panoramic Environment -->
+        <a-sky id="panorama" radius="10" src="#pano-1"></a-sky>
+
+        <!-- Video Screen in Environment -->
+        <a-video
+            src="#video-texture"
+            width="16"
+            height="9"
+            position="-8 2 -8"
+            rotation="0 45 0"
+            play-on-click>
+        </a-video>
+
+        <!-- Interactive Hotspots -->
+        <a-entity id="hotspots">
+            <!-- Image Hotspot -->
+            <a-sphere
+                position="-3 1.6 -5"
+                radius="0.2"
+                color="#FF0000"
+                hotspot="for: image; image: #hotspot-image-1; text: View Image; sound: location-sound-1">
+            </a-sphere>
+
+            <!-- Link Hotspot -->
+            <a-box
+                position="3 1.6 -5"
+                scale="0.3 0.3 0.3"
+                color="#00FF00"
+                hotspot="for: link; link: https://example.com; text: Open Website">
+            </a-box>
+
+            <!-- Sound Hotspot -->
+            <a-sphere
+                position="0 1.6 -5"
+                radius="0.2"
+                color="#0000FF"
+                hotspot="for: sound; sound: location-sound-2; text: Play Location Sound">
+            </a-sphere>
+        </a-entity>
+
+        <!-- Spatial Audio Sources -->
+        <a-entity
+            position="-3 1.6 -5"
+            sound="src: #location-sound-1; positional: true; maxDistance: 20; refDistance: 2; rolloffFactor: 1">
+        </a-entity>
+        
+        <a-entity
+            position="3 1.6 -5"
+            sound="src: #location-sound-2; positional: true; maxDistance: 20; refDistance: 2; rolloffFactor: 1">
+        </a-entity>
+
+        <!-- Image Modal (initially hidden) -->
+        <a-entity id="image-modal" visible="false">
+            <a-plane
+                position="0 1.6 -2"
+                width="2"
+                height="2"
+                material="transparent: true">
+                <a-image id="hotspot-image" position="0 0 0.01"></a-image>
+            </a-plane>
+        </a-entity>
     </a-scene>
 
     <script>
-        // Debug element
-        const debugPanel = document.querySelector('#debug-panel');
+        const panoramas = ['pano-1', 'pano-2'];
+        let currentPanoIndex = 0;
 
-        // Scene load handling
-        document.querySelector('a-scene').addEventListener('loaded', function () {
-            debugPanel.textContent += '\nScene loaded';
+        function switchPanorama(direction) {
+            if (direction === 'next') {
+                currentPanoIndex = (currentPanoIndex + 1) % panoramas.length;
+            } else {
+                currentPanoIndex = (currentPanoIndex - 1 + panoramas.length) % panoramas.length;
+            }
+            document.querySelector('#panorama').setAttribute('src', `#${panoramas[currentPanoIndex]}`);
+        }
+
+        function toggleVR() {
+            const scene = document.querySelector('a-scene');
+            if (scene.is('vr-mode')) {
+                scene.exitVR();
+            } else {
+                scene.enterVR();
+            }
+        }
+
+        // Initialize video playback
+        document.querySelector('#video-texture').play();
+
+        // Handle hotspot image modal closing
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                document.querySelector('#image-modal').setAttribute('visible', false);
+            }
         });
-
-        // Asset loading handling
-        const pano = document.querySelector('#test-pano');
-        
-        pano.addEventListener('load', function() {
-            debugPanel.textContent += '\nPanorama loaded successfully';
-        });
-
-        pano.addEventListener('error', function(e) {
-            debugPanel.textContent += '\nError loading panorama: ' + e.message;
-            // Try loading a solid color as fallback
-            document.querySelector('#skybox').setAttribute('color', '#2196f3');
-        });
-
-        // Additional debug info
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            debugPanel.textContent += '\nError: ' + msg;
-            return false;
-        };
     </script>
 </body>
 </html>
