@@ -1,88 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Panorama Viewer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Panorama</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
-    <style>
-        .button-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
-        }
-        .control-button {
-            background: rgba(0,0,0,0.5);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
-    <div class="button-container">
-        <button class="control-button" onclick="switchPanorama('prev')">Previous</button>
-        <button class="control-button" onclick="toggleVR()">VR Mode</button>
-        <button class="control-button" onclick="switchPanorama('next')">Next</button>
-    </div>
-    
     <a-scene>
         <a-assets>
-            <!-- Replace these URLs with your panorama image URLs -->
-            <img id="pano1" src="panoramas/pano1.jpg" crossorigin="anonymous">
-            <img id="pano2" src="panoramas/pano2.jpg" crossorigin="anonymous">
+            <!-- Using a single, known-working panorama -->
+            <img id="test-pano" 
+                 src="https://images.squarespace-cdn.com/content/v1/5ab9f1c34611a0baaac44dd8/1522564907331-8KT5UGGYS3VVAZM317EN/Aspen+Grove+1+-+Equirectangular+Panorama.jpg" 
+                 crossorigin="anonymous">
         </a-assets>
 
-        <!-- Camera -->
-        <a-entity position="0 1.6 0">
-            <a-camera look-controls="reverseMouseDrag: true" wasd-controls="enabled: false">
-                <a-entity
-                    position="0 0 -1"
-                    text="value: Use phone motion or swipe to look around\nClick markers to interact; color: white; align: center; width: 1">
-                </a-entity>
-            </a-camera>
-        </a-entity>
-
-        <!-- Panoramic image -->
-        <a-sky id="skybox" src="#pano1" rotation="0 -90 0"></a-sky>
-
-        <!-- Interactive markers -->
-        <a-sphere position="-2 1.5 -2" radius="0.2" color="#FF0000"
-                  animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true">
-        </a-sphere>
-
-        <a-sphere position="2 1 -3" radius="0.2" color="#00FF00"
-                  animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true; delay: 500">
-        </a-sphere>
+        <a-sky src="#test-pano"></a-sky>
     </a-scene>
-
-    <script>
-        const panoramas = ['pano1', 'pano2'];
-        let currentPano = 0;
-
-        function switchPanorama(direction) {
-            if (direction === 'next') {
-                currentPano = (currentPano + 1) % panoramas.length;
-            } else {
-                currentPano = (currentPano - 1 + panoramas.length) % panoramas.length;
-            }
-            document.querySelector('#skybox').setAttribute('src', `#${panoramas[currentPano]}`);
-        }
-
-        function toggleVR() {
-            const scene = document.querySelector('a-scene');
-            if (scene.is('vr-mode')) {
-                scene.exitVR();
-            } else {
-                scene.enterVR();
-            }
-        }
-    </script>
 </body>
 </html>
